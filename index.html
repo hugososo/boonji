@@ -228,7 +228,6 @@
         $("#moon").animate({
             top: '+=10px',
         }, 500, 'linear', function () {
-            console.log("moon:" + parseInt($("#moon").css("top")));
             if (parseInt($("#moon").css("top")) >= document.documentElement.clientHeight + 20) {
                 (function nameLoop(i) {
                     setTimeout(function () {
@@ -268,10 +267,7 @@
         $("#sun").animate({
             top: '-=1.75px',
         }, 500, 'linear', function () {
-            console.log("sun:" + parseInt($("#sun").css("top")));
             if (parseInt($("#sun").css("top")) <= 144) {
-                // $('#sun-surface').css("transform", "scale(2)");
-                // $('#sun-surface').css("box-shadow", "0 0 150px #b4bbff");
                 $('#sun-surface').addClass('ending');
                 $('#sun-surface').on('animationend', function () {
                     $('#sun-surface').css("transform", "scale(2)");

@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300&display=swap" rel="stylesheet">
+    <title>Starfield</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            position: relative;
+            font-family: 'Quicksand', sans-serif;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        .img {
+            position: absolute;
+        }
+
+        #moon {
+            filter: brightness(0.1);
+            z-index: 100;
+            left: -50%;
+            width: 200%;
+        }
+
+        #boonji {
+            position: absolute;
+            width: 100%;
+            left: 0;
+            top: 30%;
+            z-index: 5;
+            filter: drop-shadow(0px -5px 30px rgba(255, 236, 214, 0.6));
+        }
+
+        #black-layer {
+            position: absolute;
+            background: rgb(0, 0, 0, 0.95);
+            box-shadow: 0px -10px 100px rgb(0, 0, 0, 0.9);
+            z-index: 14;
+            border-radius: 100%;
+            height: 50vw;
+            width: 50%;
+            left: 26%;
+            top: 50%;
+            filter: blur(40px);
+        }
+
+        #sun {
+            position: absolute;
+            top: 340px;
+            background: rgb(255, 245, 233);
+            border: 2px solid rgb(255, 214, 164);
+            z-index: 4;
+            border-radius: 100%;
+            height: 50px;
+            width: 50px;
+            box-shadow: 0 0 100px #f3711a;
+        }
+
+        #sun-surface {
+            position: absolute;
+            top: 340px;
+            background: rgb(255, 245, 233, 0.5);
+            z-index: 4;
+            border-radius: 100%;
+            height: 100px;
+            width: 100px;
+            box-shadow: 0 0 100px #ff8331;
+            filter: blur(10px);
+            transform: scale(1);
+        }
+
+        #boonji-con {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #canvas {
+            position: absolute;
+            z-index: 1;
+        }
+
+        #title {
+            position: absolute;
+            color: white;
+            margin: auto;
+            letter-spacing: 2px;
+            font-size: 5em;
+            width: 100%;
+            top: 75%;
+            left: 50%;
+            z-index: 1000;
+            display: none;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        @keyframes ending {
+            0% {
+                box-shadow: 0 0 100px #ff8331;
+                transform: scale(1);
+            }
+
+            100% {
+                box-shadow: 0 0 150px #b4bbff;
+                transform: scale(2);
+            }
+        }
+
+        .ending {
+            animation-name: ending;
+            animation-duration: 1s;
+            animation-iteration-count: 1;
+            animation-timing-function: linear;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas"></canvas>
+    <img src="./moon-png.png" alt="" class="img" id="moon">
+    <div id="boonji-con">
+        <img src="./boonji-head.png" alt="" class="img" id="boonji">
+        <div id="black-layer"></div>
+    </div>
+    <div id="sun"></div>
+    <div id="sun-surface"></div>
+    <h1 id="title">2O2I: BOONJI PROJECT</h1>
+</body>
+<script>
+    const themeAudio = new Audio("./editedTheme.m4a");
+    themeAudio.play();
+    // constants
+    const COLOR_SPACE = "black";
+    const COLOR_STARS = "white";
+    const STAR_NUM = 1200; // number of stars in the starfield // max star size as a fraction of screen width
+    const STAR_SPEED = 0.05; // fraction of screen width per second
+
+    var canvas = document.getElementById("canvas");
+    var ctx = canvas.getContext("2d");
+    canvas.height = document.documentElement.clientHeight;
+    canvas.width = document.documentElement.clientWidth;
+
+    // set up the stars
+    var stars = [];
+    for (let i = 0; i < STAR_NUM; i++) {
+        const STAR_SIZE = 0.002 * Math.random();
+        var starSpeed = STAR_SPEED * canvas.width * Math.random() * 0.2;
+        var xv = starSpeed * randomSign() * Math.random();
+        var yv = Math.sqrt(Math.pow(starSpeed, 2) - Math.pow(xv, 2)) * randomSign();
+        let speedMult = Math.random() * 1.5 + 0.5;
+        stars[i] = {
+            r: Math.random() * STAR_SIZE * canvas.width / 2,
+            x: Math.floor(Math.random() * canvas.width),
+            y: Math.floor(Math.random() * canvas.height),
+            xv: xv * speedMult,
+            yv: yv * speedMult
+        }
+    }
+
+    // set up the animation loop
+    var timeDelta, timeLast = 0;
+    requestAnimationFrame(loop);
+
+    function loop(timeNow) {
+
+        // calculate the time difference
+        timeDelta = timeNow - timeLast;
+        timeLast = timeNow;
+
+        // space background
+        ctx.fillStyle = COLOR_SPACE;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // draw the stars
+        ctx.fillStyle = COLOR_STARS;
+        for (let i = 0; i < STAR_NUM; i++) {
+            ctx.beginPath();
+            ctx.arc(stars[i].x, stars[i].y, stars[i].r, 0, Math.PI * 2);
+            ctx.fill();
+
+            // update the star's x position
+            stars[i].x += stars[i].xv * timeDelta * 0.001;
+
+            // reposition the star to the other side if it goes off screen
+            if (stars[i].x < 0 - stars[i].r) {
+                stars[i].x = canvas.width + stars[i].r;
+            } else if (stars[i].x > canvas.width + stars[i].r) {
+                stars[i].x = 0 - stars[i].r;
+            }
+
+            // update the star's y position
+            stars[i].y += stars[i].yv * timeDelta * 0.001;
+
+            // reposition the star to the other side if it goes off screen
+            if (stars[i].y < 0 - stars[i].r) {
+                stars[i].y = canvas.height + stars[i].r;
+            } else if (stars[i].y > canvas.height + stars[i].r) {
+                stars[i].y = 0 - stars[i].r;
+            }
+        }
+        // call the next frame
+        requestAnimationFrame(loop);
+    }
+
+    function randomSign() {
+        return Math.random() >= 0.5 ? 1 : -1;
+    }
+
+    $("#sun").css("left", document.documentElement.clientWidth / 2 - 23);
+    $("#sun-surface").css("left", document.documentElement.clientWidth / 2 - 46);
+    const initialBoonjiTop = parseInt($("#boonji").css("top"));
+    const initialMoonTop = parseInt($("#moon").css("top"));
+
+    const crewList = ["Brendan Murphy", "Greg Norman, Jr.", "Nicole McGraw", "James Feltman", "Kevin Leffew", "Christopher King", "Cross Conklin"];
+
+    function loopMoon() {
+        $("#moon").animate({
+            top: '+=10px',
+        }, 500, 'linear', function () {
+            console.log("moon:" + parseInt($("#moon").css("top")));
+            if (parseInt($("#moon").css("top")) >= document.documentElement.clientHeight + 20) {
+                (function nameLoop(i) {
+                    setTimeout(function () {
+                        $("#title").show();
+                        $("#title").text(crewList[i]);
+                        if (i++ != crewList.length)
+                            nameLoop(i)
+                        else
+                            $("#title").hide();
+                    }, 1000)
+                })(0);
+                return;
+            }
+            loopMoon();
+        });
+    }
+
+    loopMoon();
+
+    function loopBoonji() {
+        $("#boonji").animate({
+            top: '-=1.2px',
+        }, 500, 'linear', function () {
+            if (parseInt($("#boonji").css("top")) <= 100) {
+                return;
+            }
+            loopBoonji();
+        });
+    }
+
+    loopBoonji();
+
+    function loopSun() {
+        $("#sun-surface").animate({
+            top: '-=2px',
+        }, 500, 'linear');
+        $("#sun").animate({
+            top: '-=1.75px',
+        }, 500, 'linear', function () {
+            console.log("sun:" + parseInt($("#sun").css("top")));
+            if (parseInt($("#sun").css("top")) <= 144) {
+                // $('#sun-surface').css("transform", "scale(2)");
+                // $('#sun-surface').css("box-shadow", "0 0 150px #b4bbff");
+                $('#sun-surface').addClass('ending');
+                $('#sun-surface').on('animationend', function () {
+                    $('#sun-surface').css("transform", "scale(2)");
+                    $('#sun-surface').css("box-shadow", "0 0 150px #b4bbff");
+                });
+                $("#title").text("2O2I: BOONJI PROJECT");
+                $("#title").show();
+                $("#boonji-con").css("cursor", "pointer");
+                $("#boonji-con").click(function () {
+                    window.open('https://www.boonjiproject.com/', '_blank');
+                });
+                return;
+            }
+            loopSun();
+        });
+    }
+
+    loopSun();
+
+
+</script>
+
+</html>
